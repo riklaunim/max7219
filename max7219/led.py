@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-import spi
 import time
+
+import pymcu
 
 from max7219.font import cp437_FONT
 
@@ -21,8 +21,14 @@ MAX7219_REG_SCANLIMIT   = 0xB
 MAX7219_REG_SHUTDOWN    = 0xC
 MAX7219_REG_DISPLAYTEST = 0xF
 
+mb = pymcu.mcuModule()
+
+
 def send_byte(register, data):
-    spi.transfer((register, data))
+    if data < 256:
+        mb.pinLow(4)
+        mb.spiTransfer([register, data])
+        mb.pinHigh(4)
 
 def letter(char, font = cp437_FONT):
     for col in range(8):
@@ -43,8 +49,7 @@ def brightness(intensity):
     send_byte(MAX7219_REG_INTENSITY, intensity % 16)
 
 def init():
-    status = spi.openSPI(speed=1000000)
-    print "SPI configuration = ", status
+    mb.spiEnable(1, 1000, 0, 0)
 
     send_byte(MAX7219_REG_SCANLIMIT, 7)   # show all 8 digits
     send_byte(MAX7219_REG_DECODEMODE, 0)  # using a LED matrix (not digits)
